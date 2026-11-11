@@ -1,0 +1,53 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/BaptisteFaisy/open-footprint-protocol/schemas/v1/open-request.json",
+  "title": "Open request (POST <BASE>/open)",
+  "description": "Sent at session start (e.g. a SessionStart hook). Opens a worksite for the authenticated pilot's session. The server MUST read only these fields and MUST drop everything else before processing or storage (PROTOCOL.md §4). Identity comes from the Bearer token, never from this body.",
+  "type": "object",
+  "properties": {
+    "session_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Client session identifier. Distinguishes sessions of the token owner; grants no right."
+    },
+    "sessionRef": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Accepted alias for session_id (reference implementations read sessionRef ?? session_id)."
+    },
+    "branch": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Git branch of the session. REQUIRED. The server SHOULD derive the ticket key from the branch name when issueKey is absent."
+    },
+    "cwd": {
+      "type": "string",
+      "description": "Working directory of the session, used to relativize absolute paths."
+    },
+    "agent_id": {
+      "type": "string",
+      "description": "Sub-agent identifier (e.g. a SubagentStart session)."
+    },
+    "agentRef": {
+      "type": "string",
+      "description": "Accepted alias for agent_id."
+    },
+    "agent_type": {
+      "type": "string",
+      "description": "Kind of agent client, as reported by the host."
+    },
+    "hook_event_name": {
+      "type": "string",
+      "description": "Name of the client event that produced this request (e.g. SessionStart). Echoed back in the hook response."
+    },
+    "issueKey": {
+      "type": "string",
+      "description": "OPTIONAL ticket key. When absent the server derives it from the branch; a branch with no ticket key still opens a worksite attached to the pilot and the branch."
+    }
+  },
+  "anyOf": [
+    { "required": ["session_id", "branch"] },
+    { "required": ["sessionRef", "branch"] }
+  ],
+  "additionalProperties": true
+}

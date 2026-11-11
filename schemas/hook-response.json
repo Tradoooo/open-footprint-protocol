@@ -1,0 +1,42 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/BaptisteFaisy/open-footprint-protocol/schemas/v1/hook-response.json",
+  "title": "Hook response (answer of POST <BASE>/open and <BASE>/touch)",
+  "description": "The envelope a hook route answers with. An EMPTY 200 body is always valid and means 'nothing to inject, carry on' (fail-open). When the body is non-empty it MUST match this schema: either additionalContext (inform the agent, work continues) or permissionDecision 'deny' (hard mode ONLY, edit refused with a reason). /close always answers an empty 200.",
+  "type": "object",
+  "required": ["hookSpecificOutput"],
+  "properties": {
+    "hookSpecificOutput": {
+      "type": "object",
+      "required": ["hookEventName"],
+      "properties": {
+        "hookEventName": {
+          "type": "string",
+          "description": "Echoes the event that produced the request.",
+          "examples": ["SessionStart", "PreToolUse", "SessionEnd", "SubagentStart"]
+        },
+        "additionalContext": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Text injected into the agent context: the human-readable verdict (kind, degree, neighbour, path, reason, advice) and any pending notices. Clients MAY also receive the machine-readable verdict (verdict.json) through richer transports."
+        },
+        "permissionDecision": {
+          "type": "string",
+          "enum": ["deny"],
+          "description": "Hard mode only: refuse the edit. MUST NOT be emitted outside zones the project placed under hard mode."
+        },
+        "permissionDecisionReason": {
+          "type": "string",
+          "minLength": 1,
+          "description": "REQUIRED with permissionDecision 'deny'. Names the neighbour and says what to do instead."
+        }
+      },
+      "oneOf": [
+        { "required": ["additionalContext"] },
+        { "required": ["permissionDecision", "permissionDecisionReason"] }
+      ],
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}

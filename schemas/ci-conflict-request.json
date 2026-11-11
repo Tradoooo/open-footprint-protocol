@@ -1,0 +1,45 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/BaptisteFaisy/open-footprint-protocol/schemas/v1/ci-conflict-request.json",
+  "title": "CI real-conflict request (POST <BASE>/ci/conflict)",
+  "description": "Sent by a pipeline (project token) when a rebase or a merge actually produced a conflict. Lets the backend record whether it saw the collision coming (wasDetected) — the protocol measures its own misses. Missing required fields → HTTP 400 {\"error\": ...}. Answer: {ok, conflictId, wasDetected}.",
+  "type": "object",
+  "properties": {
+    "issueKey": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Ticket key of the branch that hit the conflict. REQUIRED."
+    },
+    "repoSlug": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Repository slug, e.g. acme/billing. REQUIRED."
+    },
+    "repo": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Accepted alias for repoSlug."
+    },
+    "paths": {
+      "description": "Conflicted paths, repo-relative: an array of strings, or one string with one path per line. REQUIRED, non-empty.",
+      "oneOf": [
+        {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 1
+        },
+        { "type": "string", "minLength": 1 }
+      ]
+    },
+    "withIssueKey": {
+      "type": "string",
+      "description": "Ticket key of the other side of the conflict, when known."
+    }
+  },
+  "required": ["issueKey", "paths"],
+  "anyOf": [
+    { "required": ["repoSlug"] },
+    { "required": ["repo"] }
+  ],
+  "additionalProperties": true
+}

@@ -1,0 +1,71 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/BaptisteFaisy/open-footprint-protocol/schemas/v1/ci-footprint-request.json",
+  "title": "CI attested-footprint request (POST <BASE>/ci/footprint)",
+  "description": "Sent by a pipeline (project token) with the files changed on a branch since its divergence point from the base — the ATTESTED footprint, a fact valid for humans too. Paths are repo-relative, one entry per file. Missing required fields → HTTP 400 {\"error\": ...}. Answer: {ok, entries, worksiteId?, issueKey?}.",
+  "type": "object",
+  "properties": {
+    "repoSlug": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Repository slug, e.g. acme/billing. REQUIRED."
+    },
+    "repo": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Accepted alias for repoSlug."
+    },
+    "branch": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Branch whose footprint is attested. REQUIRED."
+    },
+    "baseBranch": {
+      "type": "string",
+      "description": "Divergence base. The file list SHOULD be computed since the merge-base with this branch, so an integration branch does not inflate the footprint."
+    },
+    "files": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "minItems": 1,
+      "description": "Changed files, repo-relative. REQUIRED (or paths)."
+    },
+    "paths": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Accepted alternative to files: one path per line."
+    },
+    "issueKey": {
+      "type": "string",
+      "description": "Ticket key, when the pipeline knows it; otherwise derived from the branch."
+    },
+    "prOpen": {
+      "type": ["boolean", "string"],
+      "description": "A pull request is open for this branch. Strings 'true'/'false' are accepted."
+    },
+    "prApproved": {
+      "type": ["boolean", "string"],
+      "description": "The pull request is approved (merge is close). Strings 'true'/'false' are accepted."
+    }
+  },
+  "required": ["branch"],
+  "anyOf": [
+    {
+      "properties": { "repoSlug": { "type": "string" } },
+      "required": ["repoSlug", "files"]
+    },
+    {
+      "properties": { "repo": { "type": "string" } },
+      "required": ["repo", "files"]
+    },
+    {
+      "properties": { "repoSlug": { "type": "string" } },
+      "required": ["repoSlug", "paths"]
+    },
+    {
+      "properties": { "repo": { "type": "string" } },
+      "required": ["repo", "paths"]
+    }
+  ],
+  "additionalProperties": true
+}

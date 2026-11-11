@@ -1,0 +1,161 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/BaptisteFaisy/open-footprint-protocol/schemas/v1/verdict.json",
+  "title": "Verdict",
+  "description": "The machine-readable verdict: what the backend answers to a declaration or a check. Over hook routes it is rendered as text inside additionalContext (hook-response.json); richer transports (MCP tools, APIs) MAY expose this JSON shape directly. RULE: no verdict without a named neighbour, a cited path, a reason and a course of action.",
+  "type": "object",
+  "required": ["kind", "collisions"],
+  "properties": {
+    "kind": {
+      "type": "string",
+      "enum": ["free", "caution", "wait", "stop"],
+      "description": "free: go ahead (a neighbour may still be named, D0). caution: read the neighbour worksite before editing (D1/D2). wait: work outside the zone or take another ticket (D3/D4). stop: hard mode, zone reserved or frozen — do not touch."
+    },
+    "collisions": {
+      "type": "array",
+      "description": "One entry per collision. Empty when kind is 'free' with no neighbour.",
+      "items": { "$ref": "#/definitions/collision" }
+    },
+    "pendingNotices": {
+      "type": "array",
+      "description": "Notices delivered with this response — once per session, never twice.",
+      "items": { "$ref": "#/definitions/notice" }
+    },
+    "text": {
+      "type": "string",
+      "description": "Human/agent-readable rendering of the whole verdict (the text injected as additionalContext over hook routes)."
+    },
+    "freezeSuggestion": {
+      "type": "object",
+      "description": "Suggested announced freeze when a declaration is huge, instead of hundreds of collisions.",
+      "properties": {
+        "paths": { "type": "integer", "minimum": 1 },
+        "zoneName": { "type": "string" }
+      },
+      "required": ["paths"],
+      "additionalProperties": true
+    }
+  },
+  "definitions": {
+    "collision": {
+      "type": "object",
+      "required": ["degree", "path", "neighbor", "reason", "advice"],
+      "properties": {
+        "collisionId": {
+          "type": "string",
+          "description": "Stable id, used to resolve the collision (wait/sequence/coordinate/split/merge/override). OPTIONAL in a minimum server."
+        },
+        "degree": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 5,
+          "description": "Collision degree after modulation: D0 same zone different files, D1 same folder, D2 same file, D3 same file with delete/move/rename on one side, D4 exclusive/reserved/frozen, D5 broken contract."
+        },
+        "rawDegree": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 5,
+          "description": "Degree before modulation (hotspot −1, dormant neighbour −1, prediction-only capped at D1)."
+        },
+        "zoneName": { "type": "string" },
+        "zoneNature": {
+          "type": "string",
+          "enum": ["ordinary", "exclusive", "hotspot", "frozen", "out-of-scope"]
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Representative overlapping path, repo-relative. REQUIRED."
+        },
+        "neighbor": { "$ref": "#/definitions/neighbor" },
+        "reason": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Why this collides, e.g. 'same file touched by two worksites'. REQUIRED."
+        },
+        "advice": {
+          "type": "string",
+          "minLength": 1,
+          "description": "What to do instead, e.g. 'read the neighbour worksite before editing this file'. REQUIRED."
+        },
+        "estimatedResumeMinutes": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Estimated time until the zone frees up (wait/stop verdicts)."
+        },
+        "sameTicket": {
+          "type": "boolean",
+          "description": "Two sessions on the same ticket."
+        },
+        "samePilot": {
+          "type": "boolean",
+          "description": "Both worksites are driven by the same pilot. No degree discount — only alert routing changes."
+        },
+        "probable": {
+          "type": "boolean",
+          "description": "A prediction-only side is involved: degree capped at D1, information labelled 'probable'."
+        },
+        "hardDeny": {
+          "type": "boolean",
+          "description": "Hard mode would deny edits here."
+        }
+      },
+      "additionalProperties": true
+    },
+    "neighbor": {
+      "type": "object",
+      "required": ["issueKey", "actorLabel", "state"],
+      "description": "The other worksite. REQUIRED: issueKey, actorLabel, state.",
+      "properties": {
+        "worksiteId": { "type": "string" },
+        "issueKey": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Ticket key, e.g. PROJ-88. A worksite without a ticket MAY use a backend-specific label; the field stays REQUIRED."
+        },
+        "accountId": { "type": "string" },
+        "actorLabel": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Human label, e.g. 'agent of Léa (session 3f2a)'."
+        },
+        "kind": { "type": "string", "enum": ["human", "agent"] },
+        "client": { "type": "string", "description": "e.g. claude-code, mcp, ci, manual." },
+        "sessionRef": { "type": "string" },
+        "state": {
+          "type": "string",
+          "enum": ["planned", "open", "active", "paused", "review", "dormant", "closed"]
+        },
+        "lastActivityAt": { "type": "string", "format": "date-time" },
+        "prOpen": { "type": "boolean" },
+        "prApproved": {
+          "type": "boolean",
+          "description": "When true the verdict SHOULD advise waiting for the merge — it is close."
+        },
+        "branch": { "type": "string" },
+        "notice": {
+          "type": "string",
+          "description": "Latest notice posted by that worksite, if any."
+        }
+      },
+      "additionalProperties": true
+    },
+    "notice": {
+      "type": "object",
+      "required": ["noticeId", "fromIssueKey", "fromActorLabel", "paths", "text", "createdAt"],
+      "properties": {
+        "noticeId": { "type": "string" },
+        "fromIssueKey": { "type": "string" },
+        "fromActorLabel": { "type": "string" },
+        "paths": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "text": { "type": "string", "minLength": 1 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}

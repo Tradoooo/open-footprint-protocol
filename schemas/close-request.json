@@ -1,0 +1,28 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/BaptisteFaisy/open-footprint-protocol/schemas/v1/close-request.json",
+  "title": "Close request (POST <BASE>/close)",
+  "description": "Sent at session end (e.g. a SessionEnd hook). Pauses or closes the worksite and releases everyone waiting on it. The server answers an empty 200; the response is not used (small event budget). Dormancy takes over for clients that never send this (PROTOCOL.md §7).",
+  "type": "object",
+  "properties": {
+    "session_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Client session identifier."
+    },
+    "sessionRef": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Accepted alias for session_id (reference implementations read sessionRef ?? session_id)."
+    },
+    "reason": {
+      "type": "string",
+      "description": "OPTIONAL outcome or free-text reason, e.g. merged | abandoned | done."
+    }
+  },
+  "anyOf": [
+    { "required": ["session_id"] },
+    { "required": ["sessionRef"] }
+  ],
+  "additionalProperties": true
+}
